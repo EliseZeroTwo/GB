@@ -1,25 +1,29 @@
 using System;
+using System.IO;
 
 namespace GB
 {
     public class Memory
     {
-        private byte[] ERAM = new byte[0xFFF * 2];
-        private byte[] WRAM1 = new byte[0xFFF];
-        private byte[] WRAM2 = new byte[0xFFF];
-        private byte[] HRAM = new byte[0x7E];
 
+        public MemoryStream GBMem = new MemoryStream(0xFFFF);
+
+        public void Write(Stream stream, ushort length, ushort addr)
+        {
+            GBMem.Seek(addr, SeekOrigin.Begin);
+            byte[] tempStreamBuffer = new byte[length];
+            stream.Read(tempStreamBuffer, 0, length);
+            GBMem.Write(tempStreamBuffer, 0, length);
+        } 
         public void Write(ushort s, ushort addr)
         {
             this[addr] = (byte)(s);
-            this[++addr] = (byte)(s >> 1);
+            this[(ushort)(addr + 1)] = (byte)(s >> 1);
         }
-        
         public void Read(out ushort s, ushort addr)
         {
             s = (ushort)(this[addr] | (this[(ushort)(addr + 1)] << 8));
         }
-
         public void Write(byte b, ushort addr)
         {
             this[addr] = b;
@@ -34,21 +38,25 @@ namespace GB
         {
             get
             {
-                if (addr >= 0xA000 && addr <= 0xBFFF)
+                if ((addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF80 && addr <= 0xFFFE) || (addr == 0xFFFF))
                 {
-                    return ERAM[addr & 0x1FFF];
+                    GBMem.Seek(addr, SeekOrigin.Begin);
+                    return (byte)GBMem.ReadByte();
                 }
-                else if ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF))
+                else if (addr >= 0xFF00 && addr <= 0xFF7F) // IO Regs
                 {
-                    return WRAM1[addr & 0xFFF];
-                }
-                else if ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF))
-                {
-                    return WRAM2[addr & 0xFFF];
-                }
-                else if (addr >= 0xFF80 && addr <= 0xFFFE)
-                {
-                    return HRAM[(addr & 0xFF) - 0x80];
+                    switch (addr)
+                    {
+                        case 0xFF0F:
+                        {
+                            GBMem.Seek(addr, SeekOrigin.Begin);
+                            return (byte)GBMem.ReadByte();
+                        }
+                        default:
+                        {
+                            throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} Read not implemented yet!");
+                        }
+                    }
                 }
                 else
                 {
@@ -57,27 +65,38 @@ namespace GB
             }
             set
             {
-                if (addr >= 0xA000 && addr <= 0xBFFF)
+                if ((addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF80 && addr <= 0xFFFE) || (addr == 0xFFFF))
                 {
-                    ERAM[addr & 0x1FFF] = value;
+                    GBMem.Seek(addr, SeekOrigin.Begin);
+                    GBMem.WriteByte(value);
                 }
-                else if ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF))
+                else if (addr >= 0xFF00 && addr <= 0xFF7F) // IO Regs
                 {
-                    WRAM1[addr & 0xFFF] = value;
-                }
-                else if ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF))
-                {
-                    WRAM2[addr & 0xFFF] = value;
-                }
-                else if (addr >= 0xFF80 && addr <= 0xFFFE)
-                {
-                    HRAM[(addr & 0xFF) - 0x80] = value;
+                    switch (addr)
+                    {
+                        case 0xFF0F:
+                        {
+                            if (value == 0)
+                                return;
+                            break;
+                        }
+                        default:
+                        {
+                            throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} attempted to set to {Convert.ToString(value, 2)} not implemented yet!");
+                        }
+                    }
                 }
                 else
                 {
                     throw new NotImplementedException($"Memory Access Violation: Address 0x{addr:x} not implemented yet!");
                 }
             }
+        }
+    
+        public void DumpMemory(Stream outStream)
+        {
+            GBMem.Seek(0, SeekOrigin.Begin);
+            GBMem.CopyTo(outStream);
         }
     }
 }
