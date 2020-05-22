@@ -104,10 +104,21 @@ namespace GB
         {
             while(true)
             {
-                byte opcode = Memory[Registers.PC];
-                byte opcodeSize = 0;
+                byte opcodeRaw = Memory[Registers.PC];
                 ushort operandAddr = (ushort)(Registers.PC + 1);
-                switch (opcode)
+
+                if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
+                {
+                    Console.WriteLine($"{opcode.Mneumonic}");
+                    opcode.Execute(this);
+                    Registers.PC += opcode.EffectiveLength;
+                }
+                else
+                {
+                    Program.DumpStuffException();
+                    throw new NotImplementedException($"OPCode 0x{opcodeRaw:X}");
+                }
+                /*switch (opcode)
                 {
                     case 0x0: // NOP
                     {
@@ -232,7 +243,7 @@ namespace GB
                         Program.DumpStuffException();
                         throw new NotImplementedException($"OPCode 0x{opcode:X}");
                 }
-                Registers.PC += opcodeSize;
+                Registers.PC += opcodeSize;*/
             }
         }
 

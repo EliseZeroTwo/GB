@@ -48,18 +48,22 @@ namespace GB
                     switch (addr)
                     {
                         case 0xFF0F:
+                        case 0xFF42:
+                        case 0xFF43:
                         {
                             GBMem.Seek(addr, SeekOrigin.Begin);
                             return (byte)GBMem.ReadByte();
                         }
                         default:
                         {
+                            Program.DumpStuffException();
                             throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} Read not implemented yet!");
                         }
                     }
                 }
                 else
                 {
+                    Program.DumpStuffException();
                     throw new NotImplementedException($"Memory Access Violation: Address 0x{addr:x} not implemented yet!");
                 }
             }
@@ -74,20 +78,33 @@ namespace GB
                 {
                     switch (addr)
                     {
-                        case 0xFF0F:
+                        case 0xFF41:
                         {
-                            if (value == 0)
-                                return;
+                            if ((value & 0x3) != (this[addr] & 0x3))
+                            {
+                                GBMem.Seek(addr, SeekOrigin.Begin);
+                                GBMem.WriteByte(value);
+                            }
+                            break;
+                        }
+                        case 0xFF0F:
+                        case 0xFF42:
+                        case 0xFF43:
+                        {
+                            GBMem.Seek(addr, SeekOrigin.Begin);
+                            GBMem.WriteByte(value);
                             break;
                         }
                         default:
                         {
+                            Program.DumpStuffException();
                             throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} attempted to set to {Convert.ToString(value, 2)} not implemented yet!");
                         }
                     }
                 }
                 else
                 {
+                    Program.DumpStuffException();
                     throw new NotImplementedException($"Memory Access Violation: Address 0x{addr:x} not implemented yet!");
                 }
             }
