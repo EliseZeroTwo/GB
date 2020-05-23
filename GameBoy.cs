@@ -9,6 +9,8 @@ namespace GB
     {
         public ulong CurrentCycle = 0;
         public Cpu Cpu = new Cpu();
+        public IO.LCD Lcd;
+        public IO.JOYP Joyp;
         private GBWindow Window;
         private uint nextTime = 0;
 
@@ -30,6 +32,7 @@ namespace GB
 
             while(true)
             {
+
                 if (cpuDelay-- == 0)
                     cpuDelay = Cpu.ExecuteInstruction();
                 
@@ -37,30 +40,22 @@ namespace GB
                 {
                     // Do hblanks
                     hblankDelay = 456;
+
                 }
 
                 if (vblankDelay-- == 0)
                 {
+                    Cpu.IFVBlank = true;
                     vblankDelay = 70224;
                     if (vblankTarget > SDL.SDL_GetTicks())
                         SDL.SDL_Delay((uint) vblankTarget - SDL.SDL_GetTicks());
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
                 }
-            
+
+                Cpu.IFJoypad |= Joyp.UpdateInput();
                 CurrentCycle++;
             }
         }
-
-/*
-1 fps
-1 // first frame 1.1 
-2 // second frame 
-3 // third frame 3.3
-
-
-*/
-
-
 
         public void LoadRom(Stream stream)
         {
@@ -70,6 +65,9 @@ namespace GB
         public GameBoy()
         {
             Window = new GBWindow(ref Cpu.Memory);
+            Lcd = new IO.LCD(this.Cpu.Memory);
+            Joyp = new IO.JOYP(this.Cpu.Memory);
+
         }
     }
 }

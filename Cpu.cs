@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Runtime.InteropServices;
 
@@ -72,24 +73,185 @@ namespace GB
         public Flag SubtractFlag;
         public Flag ZeroFlag;
 
+        public bool IME = false;
+        public bool IEVBlank
+        {
+            get
+            {
+                return (Memory[0xFFFF] & (1 << 0)) != 0;
+            }
+            set
+            {
+                Memory[0xFFFF] &= 0b11110;
+                Memory[0xFFFF] |= (byte)(value == true ? (1 << 0) : 0);
+            }
+        }
+
+        public bool IELCDStat
+        {
+            get
+            {
+                return (Memory[0xFFFF] & (1 << 1)) != 0;
+            }
+            set
+            {
+                Memory[0xFFFF] &= 0b11101;
+                Memory[0xFFFF] |= (byte)(value == true ? (1 << 1) : 0);
+            }
+        }
+
+        public bool IETimer
+        {
+            get
+            {
+                return (Memory[0xFFFF] & (1 << 2)) != 0;
+            }
+            set
+            {
+                Memory[0xFFFF] &= 0b11011;
+                Memory[0xFFFF] |= (byte)(value == true ? (1 << 2) : 0);
+            }
+        }
+
+        public bool IESerial
+        {
+            get
+            {
+                return (Memory[0xFFFF] & (1 << 3)) != 0;
+            }
+            set
+            {
+                Memory[0xFFFF] &= 0b10111;
+                Memory[0xFFFF] |= (byte)(value == true ? (1 << 3) : 0);
+            }
+        }
+
+        public bool IEJoypad
+        {
+            get
+            {
+                return (Memory[0xFFFF] & (1 << 4)) != 0;
+            }
+            set
+            {
+                Memory[0xFFFF] &= 0b01111;
+                Memory[0xFFFF] |= (byte)(value == true ? (1 << 4) : 0);
+            }
+        }
+
+        public bool IFVBlank
+        {
+            get
+            {
+                return (Memory[0xFF0F] & (1 << 0)) != 0;
+            }
+            set
+            {
+                Memory[0xFF0F] &= 0b11110;
+                Memory[0xFF0F] |= (byte)(value == true ? (1 << 0) : 0);
+            }
+        }
+
+        public bool IFLCDStat
+        {
+            get
+            {
+                return (Memory[0xFF0F] & (1 << 1)) != 0;
+            }
+            set
+            {
+                Memory[0xFF0F] &= 0b11101;
+                Memory[0xFF0F] |= (byte)(value == true ? (1 << 1) : 0);
+            }
+        }
+
+        public bool IFTimer
+        {
+            get
+            {
+                return (Memory[0xFF0F] & (1 << 2)) != 0;
+            }
+            set
+            {
+                Memory[0xFF0F] &= 0b11011;
+                Memory[0xFF0F] |= (byte)(value == true ? (1 << 2) : 0);
+            }
+        }
+
+        public bool IFSerial
+        {
+            get
+            {
+                return (Memory[0xFF0F] & (1 << 3)) != 0;
+            }
+            set
+            {
+                Memory[0xFF0F] &= 0b10111;
+                Memory[0xFF0F] |= (byte)(value == true ? (1 << 3) : 0);
+            }
+        }
+
+        public bool IFJoypad
+        {
+            get
+            {
+                return (Memory[0xFF0F] & (1 << 4)) != 0;
+            }
+            set
+            {
+                Memory[0xFF0F] &= 0b01111;
+                Memory[0xFF0F] |= (byte)(value == true ? (1 << 4) : 0);
+            }
+        }
+
+
 
         public int ExecuteInstruction()
-        {     
-            byte opcodeRaw = Memory[Registers.PC];
-            ushort operandAddr = (ushort)(Registers.PC + 1);
-
-            if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
+        {
+            if (((IFVBlank && IEVBlank) || (IFLCDStat && IELCDStat) || (IFTimer && IETimer) || (IFSerial && IESerial) || (IFJoypad && IEJoypad)) && IME)
             {
-                Memory.Read(out ushort maybeUshortArgLog, operandAddr);
-                Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>"));
-                opcode.Execute(this);
-                Registers.PC += opcode.EffectiveLength;
-                return opcode.Cycles;
+                IME = false;
+                Memory.Write(Registers.PC, Registers.SP);
+                Registers.SP -= 2;
+                
+                ushort target = 0;
+
+                if (IFJoypad && IEJoypad)
+                    target = 0x60;
+                
+                if (IFSerial && IESerial)
+                    target = 0x58;
+                
+                if (IFTimer && IETimer)
+                    target = 0x50;
+                
+                if (IFLCDStat && IELCDStat)
+                    target = 0x48;
+                
+                if (IFVBlank && IEVBlank)
+                    target = 0x40;
+
+                Memory.Read(out Registers.PC, target);
+                return 5*4;
             }
             else
             {
-                Program.DumpStuffException();
-                throw new NotImplementedException($"OPCode 0x{opcodeRaw:X}");
+                byte opcodeRaw = Memory[Registers.PC];
+                ushort operandAddr = (ushort)(Registers.PC + 1);
+
+                if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
+                {
+                    Memory.Read(out ushort maybeUshortArgLog, operandAddr);
+                    Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>"));
+                    opcode.Execute(this);
+                    Registers.PC += opcode.EffectiveLength;
+                    return opcode.Cycles;
+                }
+                else
+                {
+                    Program.DumpStuffException();
+                    throw new NotImplementedException($"OPCode 0x{opcodeRaw:X}");
+                }
             }
         }
 

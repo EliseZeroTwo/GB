@@ -9,7 +9,6 @@ namespace GB
     {
 
         public MemoryStream GBMem = new MemoryStream(0xFFFF);
-        public JOYP joyp = new JOYP();
 
         public void Write(Stream stream, ushort length, ushort addr)
         {
@@ -54,30 +53,10 @@ namespace GB
         {
             get
             {
-                if ((addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF80 && addr <= 0xFFFE) || (addr == 0xFFFF))
+                if ((addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF00 && addr <= 0xFFFF))
                 {
                     GBMem.Seek(addr, SeekOrigin.Begin);
                     return (byte)GBMem.ReadByte();
-                }
-                else if (addr >= 0xFF00 && addr <= 0xFF7F) // IO Regs
-                {
-                    switch (addr)
-                    {
-                        case 0xFF00: // Input (JOYP)
-                            return joyp.Read();
-                        case 0xFF0F:
-                        case 0xFF42:
-                        case 0xFF43:
-                        {
-                            GBMem.Seek(addr, SeekOrigin.Begin);
-                            return (byte)GBMem.ReadByte();
-                        }
-                        default:
-                        {
-                            Program.DumpStuffException();
-                            throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} Read not implemented yet!");
-                        }
-                    }
                 }
                 else
                 {
@@ -87,43 +66,10 @@ namespace GB
             }
             set
             {
-                if ((addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF80 && addr <= 0xFFFE) || (addr == 0xFFFF))
+                if ((addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF00 && addr <= 0xFFFF))
                 {
                     GBMem.Seek(addr, SeekOrigin.Begin);
                     GBMem.WriteByte(value);
-                }
-                else if (addr >= 0xFF00 && addr <= 0xFF7F) // IO Regs
-                {
-                    switch (addr)
-                    {
-                        case 0xFF00: // Input (JOYP)
-                        {
-                            joyp.Write(value);
-                            break;
-                        }
-                        case 0xFF0F:
-                        case 0xFF42:
-                        case 0xFF43:
-                        {
-                            GBMem.Seek(addr, SeekOrigin.Begin);
-                            GBMem.WriteByte(value);
-                            break;
-                        }
-                        case 0xFF41:
-                        {
-                            if ((value & 0x3) != (this[addr] & 0x3))
-                            {
-                                GBMem.Seek(addr, SeekOrigin.Begin);
-                                GBMem.WriteByte(value);
-                            }
-                            break;
-                        }
-                        default:
-                        {
-                            Program.DumpStuffException();
-                            throw new NotImplementedException($"Memory Access Violation: I/O 0x{addr:x} attempted to set to {Convert.ToString(value, 2)} not implemented yet!");
-                        }
-                    }
                 }
                 else
                 {

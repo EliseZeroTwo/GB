@@ -17,8 +17,11 @@ namespace GB.IO
         private bool UseDpad = false;
         private bool UseButtons = false;
 
-        private void UpdateInput()
+        private Memory internalMemory;
+
+        public bool UpdateInput()
         {
+            bool res = false;
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0)
             {
                 switch (e.type)
@@ -55,14 +58,7 @@ namespace GB.IO
                         break;
                 }
             }
-        }
-
-        public byte Read(bool readInput=true)
-        {
-            byte b = 0b1111;
-
-            if (readInput)
-                UpdateInput();
+            byte b = 0;
 
             if ((DownPressed && UseDpad) || (StartPressed && UseButtons))
                 b ^= (1 << 3);
@@ -82,22 +78,14 @@ namespace GB.IO
             if (!UseButtons)
                 b |= (1 << 5);
             
-            return b;
-            
+            res = internalMemory[0xFF00] == b;
+            internalMemory[0xFF00] = b;
+            return res;
         }
 
-        public void Write(byte b)
+        public JOYP(Memory mem)
         {
-            if ((b & (1 << 5)) != 0)
-                UseButtons = false;
-            else
-                UseButtons = true;
-            
-            if ((b & (1 << 4)) != 0)
-                UseDpad = false;
-            else
-                UseDpad = true;
-
+            internalMemory = mem;
         }
     }
 }
