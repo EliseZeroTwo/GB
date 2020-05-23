@@ -1,3 +1,5 @@
+using GB.IO;
+using SDL2;
 using System;
 using System.IO;
 
@@ -7,6 +9,7 @@ namespace GB
     {
 
         public MemoryStream GBMem = new MemoryStream(0xFFFF);
+        public JOYP joyp = new JOYP();
 
         public void Write(Stream stream, ushort length, ushort addr)
         {
@@ -34,6 +37,19 @@ namespace GB
             b = this[addr];
         }
 
+        public void RawWrite(byte b, ushort addr)
+        {
+            GBMem.Seek(addr, SeekOrigin.Begin);
+            GBMem.WriteByte(b);
+        }
+        
+        public byte RawRead(ushort addr)
+        {
+            GBMem.Seek(addr, SeekOrigin.Begin);
+            return (byte)GBMem.ReadByte();
+        }
+
+
         public byte this[ushort addr]
         {
             get
@@ -47,6 +63,8 @@ namespace GB
                 {
                     switch (addr)
                     {
+                        case 0xFF00: // Input (JOYP)
+                            return joyp.Read();
                         case 0xFF0F:
                         case 0xFF42:
                         case 0xFF43:
@@ -78,13 +96,9 @@ namespace GB
                 {
                     switch (addr)
                     {
-                        case 0xFF41:
+                        case 0xFF00: // Input (JOYP)
                         {
-                            if ((value & 0x3) != (this[addr] & 0x3))
-                            {
-                                GBMem.Seek(addr, SeekOrigin.Begin);
-                                GBMem.WriteByte(value);
-                            }
+                            joyp.Write(value);
                             break;
                         }
                         case 0xFF0F:
@@ -93,6 +107,15 @@ namespace GB
                         {
                             GBMem.Seek(addr, SeekOrigin.Begin);
                             GBMem.WriteByte(value);
+                            break;
+                        }
+                        case 0xFF41:
+                        {
+                            if ((value & 0x3) != (this[addr] & 0x3))
+                            {
+                                GBMem.Seek(addr, SeekOrigin.Begin);
+                                GBMem.WriteByte(value);
+                            }
                             break;
                         }
                         default:

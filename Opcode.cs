@@ -10,27 +10,30 @@ namespace GB
         public readonly ushort EffectiveLength;
         public readonly OpcodeHandler Handler;
         public readonly List<string> Args;
+        public int Cycles;
         public void Execute(Cpu cpu)
         {
             if (Handler != null && Args != null)
                 Handler(cpu, Args);
         }
         
-        public Opcode(string mneu, ushort length, ushort effectiveLength, OpcodeHandler handler, List<string> args)
+        public Opcode(string mneu, ushort length, ushort effectiveLength, int cycles, OpcodeHandler handler, List<string> args)
         {
             Length = length;
             EffectiveLength = effectiveLength;
             Mneumonic = mneu;
             Handler = handler;
             Args = args;
+            Cycles = cycles;
         }
-        public Opcode(string mneu, ushort length, OpcodeHandler handler, List<string> args)
+        public Opcode(string mneu, ushort length, int cycles, OpcodeHandler handler, List<string> args)
         {
             Length = length;
             EffectiveLength = Length;
             Mneumonic = mneu;
             Handler = handler;
             Args = args;
+            Cycles = cycles;
         }
     }
 }

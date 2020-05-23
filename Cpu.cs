@@ -15,7 +15,7 @@ namespace GB
     }
 
     [StructLayout(LayoutKind.Explicit)]
-    public struct Registers
+    public struct RegisterStruct
     {
         [FieldOffset(0)] public byte A;
         [FieldOffset(1)] public Flags F;
@@ -38,7 +38,7 @@ namespace GB
     public class Flag
     {
         Flags flag;
-        Registers regs;
+        RegisterStruct regs;
         public bool Value
         {
             get
@@ -53,7 +53,7 @@ namespace GB
                     regs.F &= (flag ^ (Flags)0xFF);
             }
         }
-        public Flag(Flags flag, ref Registers regs)
+        public Flag(Flags flag, ref RegisterStruct regs)
         {
             this.flag = flag;
             this.regs = regs;
@@ -62,194 +62,40 @@ namespace GB
 
     public class Cpu
     {
+        public const uint ClockSpeed = 4194304;
+        public const uint ClocksPerFrame = 70224;
         public Memory Memory = new Memory();
-        public Registers Registers = new Registers();
-        public Thread CpuThread;
+        public RegisterStruct Registers = new RegisterStruct();
 
         public Flag CarryFlag;
         public Flag HalfCarryFlag;
         public Flag SubtractFlag;
         public Flag ZeroFlag;
 
-        private bool _running = false;
 
-        public bool Running
-        {
-            get
+        public int ExecuteInstruction()
+        {     
+            byte opcodeRaw = Memory[Registers.PC];
+            ushort operandAddr = (ushort)(Registers.PC + 1);
+
+            if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
             {
-                return _running;
+                Memory.Read(out ushort maybeUshortArgLog, operandAddr);
+                Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>"));
+                opcode.Execute(this);
+                Registers.PC += opcode.EffectiveLength;
+                return opcode.Cycles;
             }
-            set
+            else
             {
-                if (value == true)
-                {
-                    if (!_running)
-                    {
-                        CpuThread.Start();
-                        _running = true;
-                    }
-                }
-                else
-                {
-                    if (_running)
-                    {
-                        CpuThread.Abort();
-                        _running = false;
-                    }
-                }
-            }
-        }
-
-        public void MainLoop()
-        {
-            while(true)
-            {
-                byte opcodeRaw = Memory[Registers.PC];
-                ushort operandAddr = (ushort)(Registers.PC + 1);
-
-                if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
-                {
-                    Console.WriteLine($"{opcode.Mneumonic}");
-                    opcode.Execute(this);
-                    Registers.PC += opcode.EffectiveLength;
-                }
-                else
-                {
-                    Program.DumpStuffException();
-                    throw new NotImplementedException($"OPCode 0x{opcodeRaw:X}");
-                }
-                /*switch (opcode)
-                {
-                    case 0x0: // NOP
-                    {
-                        opcodeSize = 1;
-                        break;
-                    }
-                    case 0x5: // DEC B
-                    {
-                        opcodeSize = 1;
-                        Registers.B--;
-                        break;
-                    }
-                    case 0x6: // LD B, d8
-                    {
-                        opcodeSize = 2;
-                        Memory.Read(out Registers.B, operandAddr);
-                        break;
-                    }
-                    case 0xD: // DEC C
-                    {
-                        opcodeSize = 1;
-                        Registers.D--;
-                        break;
-                    }
-                    case 0xE: // LD C, d8
-                    {
-                        opcodeSize = 2;
-                        Memory.Read(out Registers.C, operandAddr);
-                        break;
-                    }
-                    case 0x18: // JR r8
-                    {
-                        opcodeSize = 0;
-                        Registers.PC += Memory[operandAddr];
-                        break;
-                    }
-                    case 0x20: // JR NZ,r8
-                    {
-                        opcodeSize = 2;
-                        if ((Registers.F & Flags.Zero) != 0)
-                        {
-                            Registers.PC += Memory[operandAddr];
-                            opcodeSize = 0;
-                        }
-                        break;
-                    }
-                    case 0x21: // LD HL,d16
-                    {
-                        opcodeSize = 3;
-                        Memory.Read(out Registers.HL, operandAddr);
-                        break;
-                    }
-                    case 0x28: // JR Z,r8
-                    {
-                        opcodeSize = 2;
-                        if (ZeroFlag.Value)
-                            Registers.PC += Memory[operandAddr];
-                        break;
-                    }
-                    case 0x32: // LD (HL-),A
-                    {
-                        opcodeSize = 1;
-                        Memory.Write(Registers.A, Registers.HL--);
-                        break;
-                    }
-                    case 0x3E: // LD A, d8 
-                    {
-                        opcodeSize = 2;
-                        Registers.A = Memory[operandAddr];
-                        break;
-                    }
-                    case 0xAF: // XOR A
-                    {
-                        opcodeSize = 1;
-                        Registers.A = 0;
-                        ZeroFlag.Value = true;
-                        break;
-                    }
-                    case 0xC3: // JP a16
-                    {
-                        opcodeSize = 0; // Effectivley
-                        Memory.Read(out Registers.PC, operandAddr);
-                        break;
-                    }
-                    case 0xE0: // LDH (a8),A
-                    {
-                        opcodeSize = 2;
-                        byte operand = Memory[operandAddr];
-                        Memory[(ushort)(0xFF00 + operand)] = Registers.A; 
-                        break;
-                    }
-                    case 0xEA: // LD (a16),A
-                    {
-                        opcodeSize = 3;
-                        Memory.Read(out ushort address, operandAddr);
-                        Memory[address] = Registers.A;
-                        break;
-                    }
-                    case 0xF3: // DI
-                    {
-                        opcodeSize = 1;
-                        // TODO: Disable Interrupts
-                        break;
-                    }
-                    case 0xFE: // CP d8
-                    {
-                        opcodeSize = 2;
-                        byte value = Memory[operandAddr];
-                        if (value == Registers.A)
-                            ZeroFlag.Value = true;
-                        else
-                        {
-                            ZeroFlag.Value = false;
-                            if (Registers.A < value)
-                                CarryFlag.Value = true;
-                            else
-                                CarryFlag.Value = false;
-                        }
-                        break;
-                    }
-                    default:
-                        Program.DumpStuffException();
-                        throw new NotImplementedException($"OPCode 0x{opcode:X}");
-                }
-                Registers.PC += opcodeSize;*/
+                Program.DumpStuffException();
+                throw new NotImplementedException($"OPCode 0x{opcodeRaw:X}");
             }
         }
 
         public Cpu()
         {
-            CpuThread = new Thread(new ThreadStart(MainLoop));
+           // CpuThread = new Thread(new ThreadStart(MainLoop));
 
             Registers.AF = 0x1B0;
             Registers.BC = 0x13;
@@ -264,5 +110,17 @@ namespace GB
             SubtractFlag = new Flag(Flags.Subtract, ref Registers);
             ZeroFlag = new Flag(Flags.Zero, ref Registers);
         }       
+    
+        public T GetRegisterByName<T>(string registerName)
+        {
+            return (T)Registers.GetType().GetField(registerName).GetValue(Registers);
+        }
+
+        public void SetRegisterByName(string registerName, object value)
+        {
+            object boxed = (object)Registers;
+            Registers.GetType().GetField(registerName).SetValue(boxed, value);
+            Registers = (RegisterStruct)boxed;
+        }
     }
 }

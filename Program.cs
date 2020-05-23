@@ -19,7 +19,7 @@ namespace GB
             using (FileStream fs = File.OpenRead(args[0]))
                 gameBoy.LoadRom(fs);
             
-            gameBoy.Start();
+            gameBoy.Run();
 
             using (FileStream fs = File.Create(args[1]))
                 gameBoy.Cpu.Memory.DumpMemory(fs);

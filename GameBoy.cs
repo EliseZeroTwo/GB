@@ -1,3 +1,5 @@
+using SDL2;
+using System;
 using System.IO;
 using System.Threading;
 
@@ -5,12 +7,60 @@ namespace GB
 {
     public class GameBoy
     {
+        public ulong CurrentCycle = 0;
         public Cpu Cpu = new Cpu();
+        private GBWindow Window;
+        private uint nextTime = 0;
 
-        public void Start()
+        private uint TimeLeft()
         {
-            Cpu.Running = true;
+            uint now = SDL.SDL_GetTicks();
+            if (nextTime <= now)
+                return 0;
+            else
+                return nextTime - now;
         }
+
+        public void Run()
+        {
+            int cpuDelay = 0;
+            int hblankDelay = 456;
+            uint vblankDelay = 70224;
+            double vblankTarget = SDL.SDL_GetTicks() + vblankDelay * 1000 / Cpu.ClockSpeed;
+
+            while(true)
+            {
+                if (cpuDelay-- == 0)
+                    cpuDelay = Cpu.ExecuteInstruction();
+                
+                if (hblankDelay-- == 0)
+                {
+                    // Do hblanks
+                    hblankDelay = 456;
+                }
+
+                if (vblankDelay-- == 0)
+                {
+                    vblankDelay = 70224;
+                    if (vblankTarget > SDL.SDL_GetTicks())
+                        SDL.SDL_Delay((uint) vblankTarget - SDL.SDL_GetTicks());
+                    vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
+                }
+            
+                CurrentCycle++;
+            }
+        }
+
+/*
+1 fps
+1 // first frame 1.1 
+2 // second frame 
+3 // third frame 3.3
+
+
+*/
+
+
 
         public void LoadRom(Stream stream)
         {
@@ -19,7 +69,7 @@ namespace GB
 
         public GameBoy()
         {
-            
+            Window = new GBWindow(ref Cpu.Memory);
         }
     }
 }

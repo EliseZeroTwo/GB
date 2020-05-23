@@ -1,57 +1,34 @@
+using System;
 using System.Collections.Generic;
 
 namespace GB
 {
     public static class LDSTMV8
     {
-        private static void _LD_REG8_x8(Cpu cpu, ref byte reg, string arg)
+        private static void _LD_REG8_x8(Cpu cpu, string reg, string arg)
         {
             switch (arg)
             {
                 case "a8":
                 case "d8":
+                case "(C)":
                 {
-                    cpu.Memory.Read(out reg, (ushort)(cpu.Registers.PC + 1));
+                    ushort addr = (ushort)(cpu.Registers.PC + 1);
+                    if (arg == "(C)")
+                        addr = cpu.Registers.C;
+                    cpu.Memory.Read(out byte b, addr);
+                    cpu.SetRegisterByName(reg, b);
                     break;
                 }
                 case "A":
-                {
-                    reg = cpu.Registers.A;
-                    break;
-                }
                 case "B":
-                {
-                    reg = cpu.Registers.B;
-                    break;
-                }
-                case "(C)":
-                {
-                    cpu.Memory.Read(out reg, cpu.Registers.C);
-                    break;
-                }
                 case "C":
-                {
-                    reg = cpu.Registers.C;
-                    break;
-                }
                 case "D":
-                {
-                    reg = cpu.Registers.D;
-                    break;
-                }
                 case "E":
-                {
-                    reg = cpu.Registers.E;
-                    break;
-                }
                 case "H":
-                {
-                    reg = cpu.Registers.H;
-                    break;
-                }
                 case "L":
                 {
-                    reg = cpu.Registers.L;
+                    cpu.SetRegisterByName(reg, cpu.GetRegisterByName<byte>(arg));
                     break;
                 }
             }
@@ -110,13 +87,14 @@ namespace GB
             switch (argList[0])
             {
                 case "A":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.A, argList[1]);
-                    break;
-                }
                 case "B":
+                case "C":
+                case "D":
+                case "E":
+                case "H":
+                case "L":
                 {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.B, argList[1]);
+                    _LD_REG8_x8(cpu, argList[0], argList[1]);
                     break;
                 }
                 case "(C)":
@@ -125,31 +103,6 @@ namespace GB
                     {
                         cpu.Memory.Write(cpu.Registers.A, cpu.Registers.C); 
                     }
-                    break;
-                }
-                case "C":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.C, argList[1]);
-                    break;
-                }
-                case "D":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.D, argList[1]);
-                    break;
-                }
-                case "E":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.E, argList[1]);
-                    break;
-                }
-                case "H":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.H, argList[1]);
-                    break;
-                }
-                case "L":
-                {
-                    _LD_REG8_x8(cpu, ref cpu.Registers.L, argList[1]);
                     break;
                 }
                 case "(BC)":
@@ -179,6 +132,23 @@ namespace GB
                 }
             }
         }
-        
+        public static void LDH(Cpu cpu, List<string> args)
+        {
+            ushort operandAddr = (ushort)(cpu.Registers.PC + 1);
+            ushort addr = (ushort)(0xFF00 + cpu.Memory[operandAddr]);
+            switch (args[0])
+            {
+                case "A":
+                {
+                    cpu.Memory.Read(out cpu.Registers.A, addr);
+                    break;
+                }
+                case "(a8)":
+                {
+                    cpu.Memory.Write(cpu.Registers.A, addr);
+                    break;
+                }
+            }
+        }
     }
 }

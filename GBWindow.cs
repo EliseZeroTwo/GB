@@ -7,9 +7,32 @@ namespace GB
     public class GBWindow
     {
         public readonly IntPtr Window = IntPtr.Zero;
-        public readonly Thread Thread;
         private Memory internalMemory;
 
+        public void HandleInput()
+        {
+            bool writeDpad = (internalMemory[0xFF00] & (1 << 4)) != 0;
+            SDL.SDL_Event e;
+
+            while (SDL.SDL_PollEvent(out e) != 0)
+            {
+                switch (e.type)
+                {
+                    case SDL.SDL_EventType.SDL_QUIT:
+                        Environment.Exit(1);
+                        break;
+                    case SDL.SDL_EventType.SDL_KEYDOWN:
+                        switch(e.key.keysym.sym)
+                        {
+                            case SDL.SDL_Keycode.SDLK_q:
+                                SDL.SDL_DestroyWindow(Window);
+                                break;
+                        }
+                        break;
+                }
+            }
+
+        }
         public void Refresh()
         {
             SDL.SDL_Event e;
