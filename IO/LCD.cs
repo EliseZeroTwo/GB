@@ -22,6 +22,14 @@ namespace GB.IO
         Transferring = 0b11,
     }
 
+    public enum Shade : byte
+    {
+        White = 0,
+        LightGray = 1,
+        DarkGray = 2,
+        Black = 3,
+    }
+
     public class LCD
     {
         private Memory internalMemory;
@@ -97,6 +105,150 @@ namespace GB.IO
             {
                 internalMemory[0xFF41] ^= (byte)StatFlags.ModeFlag;
                 internalMemory[0xFF41] |= (byte)value;
+            }
+        }
+
+        public byte SCY
+        {
+            get
+            {
+                return internalMemory[0xFF42];
+            }
+            set
+            {
+                internalMemory[0xFF42] = value;
+            }
+        }
+
+        public byte SCX
+        {
+            get
+            {
+                return internalMemory[0xFF43];
+            }
+            set
+            {
+                internalMemory[0xFF43] = value;
+            }
+        }
+
+        public byte LY
+        {
+            get
+            {
+                return internalMemory[0xFF44];
+            }
+            set
+            {
+                internalMemory[0xFF44] = value;
+            }
+        }
+
+        public byte LYC
+        {
+            get
+            {
+                return internalMemory[0xFF45];
+            }
+            set
+            {
+                internalMemory[0xFF45] = value;
+            }
+        }
+
+        public byte WY
+        {
+            get
+            {
+                return internalMemory[0xFF4A];
+            }
+            set
+            {
+                internalMemory[0xFF4A] = value;
+            }
+        }
+
+        public byte WX
+        {
+            get
+            {
+                return internalMemory[0xFF4B];
+            }
+            set
+            {
+                internalMemory[0xFF4B] = value;
+            }
+        }
+
+        public Shade ColorShade0
+        {
+            get
+            {
+                return (Shade)(internalMemory[0xFF47] >> 0);
+            }
+            set
+            {
+                internalMemory[0xFF47] = (byte)((byte)value << 0);
+            }
+        }
+
+        public Shade ColorShade1
+        {
+            get
+            {
+                return (Shade)(internalMemory[0xFF47] >> 2);
+            }
+            set
+            {
+                internalMemory[0xFF47] = (byte)((byte)value << 2);
+            }
+        }
+
+        public Shade ColorShade2
+        {
+            get
+            {
+                return (Shade)(internalMemory[0xFF47] >> 4);
+            }
+            set
+            {
+                internalMemory[0xFF47] = (byte)((byte)value << 4);
+            }
+        }
+
+        public Shade ColorShade3
+        {
+            get
+            {
+                return (Shade)(internalMemory[0xFF47] >> 6);
+            }
+            set
+            {
+                internalMemory[0xFF47] = (byte)((byte)value << 6);
+            }
+        }
+
+        public void DrawLine()
+        {
+
+            LY++;
+            if (LY >= 144 && LY <= 153)
+            {
+                internalMemory[0xFF0F] |= 1; // Set VBlank Interrupt
+                Mode = LCDModeFlag.VBlank;
+                if (M1Intr)
+                {
+                    internalMemory[0xFF0F] |= (1 << 1);
+                }
+            }
+            else
+            {
+                internalMemory[0xFF0F] ^= 1;
+                Mode = LCDModeFlag.HBlank;
+                if (M0Intr)
+                {
+                    internalMemory[0xFF0F] |= (1 << 1);
+                }
             }
         }
 

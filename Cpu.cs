@@ -63,10 +63,13 @@ namespace GB
 
     public class Cpu
     {
+        public bool SingleStep = false;
         public const uint ClockSpeed = 4194304;
         public const uint ClocksPerFrame = 70224;
         public Memory Memory = new Memory();
         public RegisterStruct Registers = new RegisterStruct();
+
+        public List<ushort> Breakpoints = new List<ushort>();
 
         public Flag CarryFlag;
         public Flag HalfCarryFlag;
@@ -208,6 +211,78 @@ namespace GB
 
         public int ExecuteInstruction()
         {
+            if (SingleStep || Breakpoints.Contains(Registers.PC))
+            {
+                if (Breakpoints.Contains(Registers.PC))
+                    Console.WriteLine($"Hit breakpoint at 0x{Registers.PC:x}");
+                SingleStep = true;
+                bool waiting = true;
+                while(waiting)
+                {
+                    ConsoleKeyInfo keyInfo = Console.ReadKey();
+                    switch(keyInfo.KeyChar)
+                    {
+                        case 'a':
+                        {
+                            Console.Write("Addr> 0x");
+                            string strAddr = Console.ReadLine();
+                            try
+                            {
+                                ushort readAddr = Convert.ToUInt16(strAddr, 16);
+                                {
+                                    byte bValue = Memory[readAddr];
+                                    Memory.Read(out ushort val, readAddr);
+                                    Console.WriteLine($"byte: 0x{bValue:X}\nushort: 0x{val:x}");
+                                }
+                            } catch { }
+                            break;
+                        }
+                        case 'b':
+                        {
+                            Console.Write("Toggle breakpoint at> 0x");
+                            string strAddr = Console.ReadLine();
+                            try
+                            {
+                                ushort readAddr = Convert.ToUInt16(strAddr, 16);
+                                {
+                                    if (Breakpoints.Contains(readAddr))
+                                    {
+                                        Breakpoints.Remove(readAddr);
+                                        Console.WriteLine($"Removed breakpoint at 0x{readAddr:x}");
+                                    }
+                                    else
+                                    {
+                                        Breakpoints.Add(readAddr);
+                                        Console.WriteLine($"Added breakpoint at 0x{readAddr:x}");
+                                    }
+                                }
+                            } catch { }
+                            break;
+                        }
+                        case 'c':
+                        {
+                            SingleStep = false;
+                            waiting = false;
+                            break;
+                        }
+                        case 'n':
+                        {
+                            waiting = false;
+                            break;
+                        }
+                        case 'i':
+                        {
+                            Console.WriteLine($"Regs: A:{Registers.A:X} B:{Registers.B:X} C:{Registers.C:X} D:{Registers.D:X} E:{Registers.E:X} F:{Registers.F:X} H:{Registers.H:X} L:{Registers.L:X}\nRegs: AF:{Registers.AF:X} BC:{Registers.BC:X} DE:{Registers.DE:X} HL:{Registers.HL:X}\nRegs: PC:{Registers.PC:X} SP:{Registers.SP:X}");
+                            break;
+                        }
+                        case 'q':
+                        {
+                            System.Environment.Exit(1);
+                            break;
+                        }
+                    }
+                }
+            }
             if (((IFVBlank && IEVBlank) || (IFLCDStat && IELCDStat) || (IFTimer && IETimer) || (IFSerial && IESerial) || (IFJoypad && IEJoypad)) && IME)
             {
                 IME = false;
@@ -231,6 +306,7 @@ namespace GB
                 if (IFVBlank && IEVBlank)
                     target = 0x40;
 
+                Console.WriteLine($"Executing Interrupt! Target: 0x{target:x}");
                 Memory.Read(out Registers.PC, target);
                 return 5*4;
             }

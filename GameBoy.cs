@@ -32,27 +32,26 @@ namespace GB
 
             while(true)
             {
-
                 if (cpuDelay-- == 0)
                     cpuDelay = Cpu.ExecuteInstruction();
-                
+
+
                 if (hblankDelay-- == 0)
                 {
                     // Do hblanks
                     hblankDelay = 456;
-
+                    Lcd.DrawLine();
                 }
 
                 if (vblankDelay-- == 0)
                 {
-                    Cpu.IFVBlank = true;
                     vblankDelay = 70224;
                     if (vblankTarget > SDL.SDL_GetTicks())
                         SDL.SDL_Delay((uint) vblankTarget - SDL.SDL_GetTicks());
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
                 }
 
-                Cpu.IFJoypad |= Joyp.UpdateInput();
+                Cpu.IFJoypad = Joyp.UpdateInput();
                 CurrentCycle++;
             }
         }

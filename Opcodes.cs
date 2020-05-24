@@ -20,6 +20,7 @@ namespace GB
             { 0xAF, new Opcode("XOR A", 1, 4, new OpcodeHandler(ARTHLOG8.XOR), new List<string>{"A"}) },
             { 0xC3, new Opcode("JP a16", 3, 0, 16, new OpcodeHandler(ARTHLOG16.JP), new List<string>{"a16"}) },
             { 0xE0, new Opcode("LDH (a8),A", 2, 12, new OpcodeHandler(LDSTMV8.LDH), new List<string>{"(a8)", "A"}) },
+            { 0xF0, new Opcode("LDH A,(a8)", 2, 12, new OpcodeHandler(LDSTMV8.LDH), new List<string>{"A", "(a8)"}) },
             { 0xF3, new Opcode("LD A,(C)", 1, 8, new OpcodeHandler(LDSTMV8.LD), new List<string>{"A", "(C)"}) },
         };
     }
