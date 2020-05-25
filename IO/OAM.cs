@@ -20,11 +20,13 @@ namespace GB.IO
         {
             get
             {
-                return Utils.ReadStruct<OAMEntry>(internalMemory.Read((ushort)((b * 4) + 0xFE00), 4));
+                byte[] oamArray = new byte[4];
+                internalMemory.Read(oamArray, (ushort)((b * 4) + 0xFE00), 4);
+                return Utils.ReadStruct<OAMEntry>(oamArray);
             }
             set
             {
-                internalMemory.Write(Utils.MarshalStructToArray<OAMEntry>(value), (ushort)((b * 4) + 0xFE00));
+                internalMemory.Write(Utils.MarshalStructToArray<OAMEntry>(value), (ushort)((b * 4) + 0xFE00), 4);
             }
         }
 

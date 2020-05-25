@@ -21,6 +21,21 @@ namespace GB
                     return true;
             }
         }
+        
+        public static void CALL(Cpu cpu, List<string> args)
+        {
+            bool doJmp = ConditionMet(cpu, args[0]);
+            ushort operandAddr = (ushort)(cpu.Registers.PC + 1);
+            cpu.Memory.Read(out ushort dstAddr, operandAddr);
+
+            if (doJmp)
+            {
+                cpu.StackPush(cpu.Registers.PC);
+                cpu.Registers.PC = dstAddr;
+            } 
+            else
+                cpu.Registers.PC += 3;
+        }
 
         public static void JMP(Cpu cpu, List<string> args)
         {

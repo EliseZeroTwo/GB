@@ -1,19 +1,19 @@
 using GB.IO;
 using SDL2;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace GB
 {
-    public class Memory
+    public class Memory : MemoryStream
     {
-
         public enum MBC : byte
         {
             ROMOnly = 0,
         }
 
-        public MemoryStream GBMem = new MemoryStream(0xFFFF);
+        public Memory() : base(0xFFFF) { }
 
         public void Write(ushort s, ushort addr)
         {
@@ -34,60 +34,41 @@ namespace GB
             b = this[addr];
         }
 
-        public void Write(Stream stream, ushort length, ushort addr)
+        public override void Write(byte[] buffer, int memoffset, int count) 
         {
-            GBMem.Seek(addr, SeekOrigin.Begin);
-            byte[] tempStreamBuffer = new byte[length];
-            stream.Read(tempStreamBuffer, 0, length);
-            GBMem.Write(tempStreamBuffer, 0, length);
+            this.Seek(memoffset, SeekOrigin.Begin);
+            base.Write(buffer, 0, count);
         }
 
-        public byte[] Read(ushort offset, ushort length)
+        public override int Read(byte[] buffer, int memoffset, int count) 
         {
-            byte[] retArray = new byte[length];
-            GBMem.Seek(offset, SeekOrigin.Begin);
-            GBMem.Read(retArray, 0, length);
-            return retArray;
+            this.Seek(memoffset, SeekOrigin.Begin);
+            return base.Read(buffer, 0, count);
         }
-
-        public void Write(byte[] byteArray, ushort memOffset, ushort length=0, ushort arrayOffset=0)
-        {
-            GBMem.Seek(memOffset, SeekOrigin.Begin);
-            GBMem.Write(byteArray, 0, length == 0 ? byteArray.Length : length);
-        }
-
-        public void RawWrite(byte b, ushort addr)
-        {
-            GBMem.Seek(addr, SeekOrigin.Begin);
-            GBMem.WriteByte(b);
-        }
-        
-        public byte RawRead(ushort addr)
-        {
-            GBMem.Seek(addr, SeekOrigin.Begin);
-            return (byte)GBMem.ReadByte();
-        }
-
 
         public byte this[ushort addr]
         {
             get
             {
-                if ((addr <= 0x7FFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFEA0 && addr <= 0xFEFF) || (addr >= 0xFF00 && addr <= 0xFFFF))
+                if (addr <= 0x8000 || (addr >= 0xC000 && addr <= 0xFE9F) || addr >= 0xFF00)
                 {
-                    GBMem.Seek(addr, SeekOrigin.Begin);
-                    return (byte)GBMem.ReadByte();
+                    if ((addr >= 0xE000 && addr <= 0xEFFF))
+                        addr = (ushort)(addr - 0x1000);
+                    this.Seek(addr, SeekOrigin.Begin);
+                    return (byte)this.ReadByte();
                 }
                 else if (addr >= 0x8000 && addr <= 0x9FFF)
                 {
-                    if ((this[0xFF41] & 0b11) != 3)
+                    if ((this[0xFF41] & 0b11) != 3) // Check LCD mode
                     {
-                        GBMem.Seek(addr, SeekOrigin.Begin);
-                        return (byte)GBMem.ReadByte();
+                        this.Seek(addr, SeekOrigin.Begin);
+                        return (byte)this.ReadByte();
                     }
                     else
                         return 0;
                 }
+                else if (addr >= 0xFEA0 && addr <= 0xFEFF)
+                    return 0;
                 else
                 {
                     Program.DumpStuffException();
@@ -96,19 +77,21 @@ namespace GB
             }
             set
             {
-                if ((addr <= 0x7FFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFEA0 && addr <= 0xFEFF) || (addr >= 0xFF00 && addr <= 0xFFFF))
+                if (addr <= 0x8000 || (addr >= 0xC000 && addr <= 0xFE9F) || addr >= 0xFF00)
                 {
-                    GBMem.Seek(addr, SeekOrigin.Begin);
-                    GBMem.WriteByte(value);
+                    this.Seek(addr, SeekOrigin.Begin);
+                    this.WriteByte(value);
                 }
                 else if (addr >= 0x8000 && addr <= 0x9FFF)
                 {
                     if ((this[0xFF41] & 0b11) != 3)
                     {
-                        GBMem.Seek(addr, SeekOrigin.Begin);
-                        GBMem.WriteByte(value);
+                        this.Seek(addr, SeekOrigin.Begin);
+                        this.WriteByte(value);
                     }
                 }
+                else if (addr >= 0xFEA0 && addr <= 0xFEFF)
+                    return;
                 else
                 {
                     Program.DumpStuffException();
@@ -119,8 +102,8 @@ namespace GB
     
         public void DumpMemory(Stream outStream)
         {
-            GBMem.Seek(0, SeekOrigin.Begin);
-            GBMem.CopyTo(outStream);
+            this.Seek(0, SeekOrigin.Begin);
+            this.CopyTo(outStream);
         }
     }
 }

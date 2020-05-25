@@ -372,7 +372,30 @@ namespace GB
             Registers.GetType().GetField(registerName).SetValue(boxed, value);
             Registers = (RegisterStruct)boxed;
         }
+
+        public void StackPop(out ushort outVal)
+        {
+            Registers.SP += 2;
+            Memory.Read(out outVal, Registers.SP);
+        }
+
+        public void StackPop(out byte outVal)
+        {
+            Registers.SP += 1;
+            outVal = Memory[Registers.SP];
+        }
+
+        public void StackPush(ushort val)
+        {
+            Memory.Write(val, Registers.SP);
+            Registers.SP += 2;
+        }
         
+        public void StackPush(byte val)
+        {
+            Memory[Registers.SP] = val;
+            Registers.SP += 1;
+        }
         
     }
 }
