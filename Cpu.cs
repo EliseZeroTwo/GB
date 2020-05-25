@@ -207,7 +207,19 @@ namespace GB
             }
         }
 
-
+        public bool ShouldSetZeroFlag(byte value)
+        {
+            return value == 0;
+        }
+        public bool ShouldSetHalfCarry(byte valueOne, byte valueTwo)
+        {
+            return (((valueOne&0xf) + (valueTwo&0xf))&0x10) != 0;
+        }
+        
+        public bool ShouldSetCarryFlag(byte valueOne, byte valueTwo)
+        {
+            return (((valueOne&0xff) + (valueTwo&0xff))&0x100) != 0;
+        }
 
         public int ExecuteInstruction()
         {
@@ -314,11 +326,11 @@ namespace GB
             {
                 byte opcodeRaw = Memory[Registers.PC];
                 ushort operandAddr = (ushort)(Registers.PC + 1);
+                Memory.Read(out ushort maybeUshortArgLog, operandAddr);
 
                 if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
                 {
-                    Memory.Read(out ushort maybeUshortArgLog, operandAddr);
-                    Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>"));
+                    Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>").Replace("d8", $"d8<0x{Memory[operandAddr]:x}>").Replace("d16", $"d16<0x{maybeUshortArgLog:x}>"));
                     opcode.Execute(this);
                     Registers.PC += opcode.EffectiveLength;
                     return opcode.Cycles;
@@ -360,5 +372,7 @@ namespace GB
             Registers.GetType().GetField(registerName).SetValue(boxed, value);
             Registers = (RegisterStruct)boxed;
         }
+        
+        
     }
 }

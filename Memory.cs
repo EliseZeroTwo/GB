@@ -8,6 +8,11 @@ namespace GB
     public class Memory
     {
 
+        public enum MBC : byte
+        {
+            ROMOnly = 0,
+        }
+
         public MemoryStream GBMem = new MemoryStream(0xFFFF);
 
         public void Write(Stream stream, ushort length, ushort addr)
@@ -53,10 +58,20 @@ namespace GB
         {
             get
             {
-                if ((addr <= 0x7FFF) || (addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF00 && addr <= 0xFFFF))
+                if ((addr <= 0x7FFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFEA0 && addr <= 0xFEFF) || (addr >= 0xFF00 && addr <= 0xFFFF))
                 {
                     GBMem.Seek(addr, SeekOrigin.Begin);
                     return (byte)GBMem.ReadByte();
+                }
+                else if (addr >= 0x8000 && addr <= 0x9FFF)
+                {
+                    if ((this[0xFF41] & 0b11) != 3)
+                    {
+                        GBMem.Seek(addr, SeekOrigin.Begin);
+                        return (byte)GBMem.ReadByte();
+                    }
+                    else
+                        return 0;
                 }
                 else
                 {
@@ -66,10 +81,18 @@ namespace GB
             }
             set
             {
-                if ((addr >= 0xA000 && addr <= 0xBFFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFF00 && addr <= 0xFFFF))
+                if ((addr <= 0x7FFF) || ((addr >= 0xC000 && addr <= 0xCFFF) || (addr >= 0xE000 && addr <= 0xEFFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || ((addr >= 0xD000 && addr <= 0xDFFF) || (addr >= 0xF000 && addr <= 0xFDFF)) || (addr >= 0xFEA0 && addr <= 0xFEFF) || (addr >= 0xFF00 && addr <= 0xFFFF))
                 {
                     GBMem.Seek(addr, SeekOrigin.Begin);
                     GBMem.WriteByte(value);
+                }
+                else if (addr >= 0x8000 && addr <= 0x9FFF)
+                {
+                    if ((this[0xFF41] & 0b11) != 3)
+                    {
+                        GBMem.Seek(addr, SeekOrigin.Begin);
+                        GBMem.WriteByte(value);
+                    }
                 }
                 else
                 {

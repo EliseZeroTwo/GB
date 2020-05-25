@@ -1,101 +1,70 @@
+using System;
 using System.Collections.Generic;
 namespace GB
 {
     public static class ARTHLOG8
     {
-        private static void _DEC(Cpu cpu, ref byte reg)
-        {
-            byte oldVal = reg;
-                    
-            reg--;
-            
-            if (reg == 0)
-                cpu.ZeroFlag.Value = true;
-            
-            if ((oldVal & (1<<3)) != (reg & (1<<3)))
-                cpu.HalfCarryFlag.Value = true;
-        }
         public static void DEC(Cpu cpu, List<string> args)
         {
             cpu.SubtractFlag.Value = true;
             switch (args[0])
             {
                 case "A":
-                {
-                    _DEC(cpu, ref cpu.Registers.A);
-                    break;
-                }
                 case "B":
-                {
-                    _DEC(cpu, ref cpu.Registers.B);
-                    break;
-                }
                 case "C":
-                {
-                    _DEC(cpu, ref cpu.Registers.C);
-                    break;
-                }
                 case "D":
-                {
-                    _DEC(cpu, ref cpu.Registers.D);
-                    break;
-                }
                 case "E":
-                {
-                    _DEC(cpu, ref cpu.Registers.E);
-                    break;
-                }
                 case "H":
-                {
-                    _DEC(cpu, ref cpu.Registers.H);
-                    break;
-                }
                 case "L":
                 {
-                    _DEC(cpu, ref cpu.Registers.L);
+                    byte oldRegVal = cpu.GetRegisterByName<byte>(args[0]);
+                    cpu.SetRegisterByName(args[0], --oldRegVal);
+                    cpu.HalfCarryFlag.Value = cpu.ShouldSetHalfCarry(oldRegVal, (byte)(oldRegVal + 1));
+                    cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag(oldRegVal);
                     break;
                 }
-            }
-        }
-        public static void JR(Cpu cpu, List<string> args)
-        {
-            ushort operandAddr = (ushort)(cpu.Registers.PC + 1);
-            if(args[0] == "r8")
-            {
-                cpu.Registers.PC += cpu.Memory[operandAddr];
-            }
-            else if (args.Count == 2)
-            {
-                bool doJmp = false;
-                switch(args[0])
+                case "(HL)":
                 {
-                    case "Z":
-                    {
-                        doJmp = cpu.ZeroFlag.Value;
-                        break;
-                    }
-                    case "C":
-                    {
-                        doJmp = cpu.CarryFlag.Value;
-                        break;
-                    }
-                    case "NZ":
-                    {
-                        doJmp = !cpu.ZeroFlag.Value;
-                        break;
-                    }
-                    case "NC":
-                    {
-                        doJmp = !cpu.CarryFlag.Value;
-                        break;
-                    }
+                    byte oldVal = cpu. Memory[cpu.Registers.HL];
+                    cpu. Memory[cpu.Registers.HL]--;
+                    cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag((byte)(oldVal - 1));
+                    cpu.HalfCarryFlag.Value = cpu.ShouldSetHalfCarry(oldVal, (byte)(oldVal - 1));
+                   break;
                 }
-                if (doJmp)
-                    cpu.Registers.PC += (ushort)unchecked((sbyte)(cpu.Memory[operandAddr]));
-                else
-                    cpu.Registers.PC += 2;
             }
         }
+
+        public static void INC(Cpu cpu, List<string> args)
+        {
+            cpu.SubtractFlag.Value = false;
+            switch (args[0])
+            {
+                case "A":
+                case "B":
+                case "C":
+                case "D":
+                case "E":
+                case "H":
+                case "L":
+                {
+                    byte regVal = cpu.GetRegisterByName<byte>(args[0]);
+                    cpu.SetRegisterByName(args[0], ++regVal);
+                    cpu.HalfCarryFlag.Value = cpu.ShouldSetHalfCarry(regVal, (byte)(regVal - 1));
+                    cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag(regVal);
+                    break;
+                }
+                case "(HL)":
+                {
+                    byte oldVal = cpu. Memory[cpu.Registers.HL];
+                    cpu. Memory[cpu.Registers.HL]++;
+                    cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag((byte)(oldVal + 1));
+                    cpu.HalfCarryFlag.Value = cpu.ShouldSetHalfCarry(oldVal, (byte)(oldVal + 1));
+                   break;
+                }
+            }
+        }
+
+
         public static void XOR(Cpu cpu, List<string> args)
         {
             cpu.SubtractFlag.Value = false;
@@ -151,10 +120,45 @@ namespace GB
                     break;
                 }
             }
-            if (cpu.Registers.A == 0)
-                cpu.ZeroFlag.Value = true;
-            else
-                cpu.ZeroFlag.Value = false;
+            
+            cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag(cpu.Registers.A);
+        }
+
+
+        public static void CP(Cpu cpu, List<string> args)
+        {
+            cpu.SubtractFlag.Value = true;
+
+            byte value = 0;
+
+            switch(args[0])
+            {
+                case "A":
+                case "B":
+                case "C":
+                case "D":
+                case "E":
+                case "H":
+                case "L":
+                {
+                    value = cpu.GetRegisterByName<byte>(args[0]);
+                    break;
+                }
+                case "d8":
+                case "(HL)":
+                {
+                    ushort addr = (ushort)(cpu.Registers.PC + 1);
+                    if (args[0] == "(HL)")
+                        addr = cpu.Registers.HL;
+                    value = cpu.Memory[addr]; 
+                    break;
+                }
+            }
+
+            cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag((byte)(cpu.Registers.A - value));
+            cpu.HalfCarryFlag.Value = cpu.ShouldSetHalfCarry(cpu.Registers.A, value);
+            cpu.CarryFlag.Value = cpu.ShouldSetCarryFlag(cpu.Registers.A, value);
+            
         }
     }
 }
