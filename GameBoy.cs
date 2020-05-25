@@ -35,7 +35,6 @@ namespace GB
                 if (cpuDelay-- == 0)
                     cpuDelay = Cpu.ExecuteInstruction();
 
-
                 if (hblankDelay-- == 0)
                 {
                     // Do hblanks
@@ -48,8 +47,6 @@ namespace GB
                     vblankDelay = 70224;
                     if (vblankTarget > SDL.SDL_GetTicks())
                         SDL.SDL_Delay((uint) vblankTarget - SDL.SDL_GetTicks());
-                    else
-                        Console.WriteLine($"OwO");
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
                 }
 
