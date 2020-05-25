@@ -15,13 +15,6 @@ namespace GB
 
         public MemoryStream GBMem = new MemoryStream(0xFFFF);
 
-        public void Write(Stream stream, ushort length, ushort addr)
-        {
-            GBMem.Seek(addr, SeekOrigin.Begin);
-            byte[] tempStreamBuffer = new byte[length];
-            stream.Read(tempStreamBuffer, 0, length);
-            GBMem.Write(tempStreamBuffer, 0, length);
-        } 
         public void Write(ushort s, ushort addr)
         {
             this[addr] = (byte)(s);
@@ -39,6 +32,28 @@ namespace GB
         public void Read(out byte b, ushort addr)
         {
             b = this[addr];
+        }
+
+        public void Write(Stream stream, ushort length, ushort addr)
+        {
+            GBMem.Seek(addr, SeekOrigin.Begin);
+            byte[] tempStreamBuffer = new byte[length];
+            stream.Read(tempStreamBuffer, 0, length);
+            GBMem.Write(tempStreamBuffer, 0, length);
+        }
+
+        public byte[] Read(ushort offset, ushort length)
+        {
+            byte[] retArray = new byte[length];
+            GBMem.Seek(offset, SeekOrigin.Begin);
+            GBMem.Read(retArray, 0, length);
+            return retArray;
+        }
+
+        public void Write(byte[] byteArray, ushort memOffset, ushort length=0, ushort arrayOffset=0)
+        {
+            GBMem.Seek(memOffset, SeekOrigin.Begin);
+            GBMem.Write(byteArray, 0, length == 0 ? byteArray.Length : length);
         }
 
         public void RawWrite(byte b, ushort addr)
