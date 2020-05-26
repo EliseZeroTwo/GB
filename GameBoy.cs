@@ -57,9 +57,9 @@ namespace GB
 
         public void LoadRom(Stream stream)
         {
-            byte[] romTemp = new byte[0x3FFF];
-            stream.Read(romTemp, 0, 0x3FFF);
-            Cpu.Memory.Write(romTemp, 0, 0x3FFF);
+            byte[] romTemp = new byte[0x7FFF];
+            stream.Read(romTemp, 0, stream.Length > 0x7FFF ? 0x7FFF : (int)stream.Length);
+            Cpu.Memory.Write(romTemp, 0, 0x7FFF);
         }
 
         public GameBoy()

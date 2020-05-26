@@ -21,7 +21,26 @@ namespace GB
                     return true;
             }
         }
-        
+
+        public static void RET(Cpu cpu, List<string> args)
+        {
+            bool doRet = args.Count != 0 ? ConditionMet(cpu, args[0]) : true;
+            if (doRet)
+            {
+                cpu.StackPop(out ushort addr);
+                cpu.Registers.PC = addr;
+            }
+            else
+                cpu.Registers.PC += 1;
+        }
+
+        public static void RETI(Cpu cpu, List<string> args)
+        {
+            cpu.StackPop(out ushort addr);
+            cpu.Registers.PC = addr;
+            cpu.IME = true;
+        }
+
         public static void CALL(Cpu cpu, List<string> args)
         {
             bool doJmp = ConditionMet(cpu, args[0]);

@@ -209,5 +209,36 @@ namespace GB
             cpu.CarryFlag.Value = false;
             cpu.HalfCarryFlag.Value = false;
         }
+        // Referenced khedoros's code
+        public static void DAA(Cpu cpu, List<string> args)
+        {
+            
+            if (!cpu.SubtractFlag.Value)
+            {
+                if (cpu.CarryFlag.Value || cpu.Registers.A > 0x99)
+                {
+                    cpu.Registers.A += 0x60;
+                    cpu.CarryFlag.Value = true;
+                }
+
+                if (cpu.HalfCarryFlag.Value || (cpu.Registers.A & 0xF) > 0x9)
+                    cpu.Registers.A += 0x6;
+                
+            }
+            else
+            {
+                if (cpu.CarryFlag.Value)
+                {
+                    cpu.Registers.A -= 0x60;
+                    cpu.CarryFlag.Value = true;
+                }
+
+                if (cpu.HalfCarryFlag.Value)
+                    cpu.Registers.A -= 0x6;
+            }
+
+            cpu.HalfCarryFlag.Value = false;
+            cpu.ZeroFlag.Value = cpu.ShouldSetZeroFlag(cpu.Registers.A);
+        }
     }
 }

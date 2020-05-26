@@ -18,7 +18,7 @@ namespace GB
         public void Write(ushort s, ushort addr)
         {
             this[addr] = (byte)(s);
-            this[(ushort)(addr + 1)] = (byte)(s >> 1);
+            this[(ushort)(addr + 1)] = (byte)(s >> 8);
         }
         public void Read(out ushort s, ushort addr)
         {
@@ -103,7 +103,9 @@ namespace GB
         public void DumpMemory(Stream outStream)
         {
             this.Seek(0, SeekOrigin.Begin);
-            this.CopyTo(outStream);
+            byte[] tempArray = new byte[0xffff];
+            this.Read(tempArray, 0, 0xFFFF);
+            outStream.Write(tempArray, 0, 0xFFFF);
         }
     }
 }

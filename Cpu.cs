@@ -18,14 +18,14 @@ namespace GB
     [StructLayout(LayoutKind.Explicit)]
     public struct RegisterStruct
     {
-        [FieldOffset(0)] public byte A;
-        [FieldOffset(1)] public Flags F;
-        [FieldOffset(2)] public byte B;
-        [FieldOffset(3)] public byte C;
-        [FieldOffset(4)] public byte D;
-        [FieldOffset(5)] public byte E;
-        [FieldOffset(6)] public byte H;
-        [FieldOffset(7)] public byte L;
+        [FieldOffset(0)] public Flags F;
+        [FieldOffset(1)] public byte A;
+        [FieldOffset(2)] public byte C;
+        [FieldOffset(3)] public byte B;
+        [FieldOffset(4)] public byte E;
+        [FieldOffset(5)] public byte D;
+        [FieldOffset(6)] public byte L;
+        [FieldOffset(7)] public byte H;
 
         [FieldOffset(0)] public ushort AF;
         [FieldOffset(2)] public ushort BC;
@@ -232,6 +232,10 @@ namespace GB
                 while(waiting)
                 {
                     ConsoleKeyInfo keyInfo = Console.ReadKey();
+                    int currentLineCursor = Console.CursorTop;
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(new string(' ', 3)); 
+                    Console.SetCursorPosition(0, currentLineCursor);
                     switch(keyInfo.KeyChar)
                     {
                         case 'a':
@@ -275,6 +279,16 @@ namespace GB
                         {
                             SingleStep = false;
                             waiting = false;
+                            break;
+                        }
+                        case 'd':
+                        {
+                            Console.Write("Path for dump> ");
+                            string path = Console.ReadLine();
+                            using (System.IO.FileStream fs = System.IO.File.Create(path))
+                            {
+                                Memory.DumpMemory(fs);
+                            }
                             break;
                         }
                         case 'n':
@@ -388,13 +402,13 @@ namespace GB
         public void StackPush(ushort val)
         {
             Memory.Write(val, Registers.SP);
-            Registers.SP += 2;
+            Registers.SP -= 2;
         }
         
         public void StackPush(byte val)
         {
             Memory[Registers.SP] = val;
-            Registers.SP += 1;
+            Registers.SP -= 1;
         }
         
     }
