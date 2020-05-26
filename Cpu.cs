@@ -401,6 +401,13 @@ namespace GB
             HalfCarryFlag = true;
             SubtractFlag = false;
             ZeroFlag = true;
+
+            Memory[0xFFFF] = 0;
+            IEJoypad = false;
+            IELCDStat = false;
+            IESerial = false;
+            IETimer = false;
+            IEVBlank = false;
         }       
     
         public T GetRegisterByName<T>(string registerName)

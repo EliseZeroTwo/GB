@@ -90,6 +90,11 @@ namespace GB
                 else
                     cpu.Registers.PC += 3;
             }
+            else if (args[0] == "(HL)")
+            {
+                cpu.Memory.Read(out ushort jumpOffset, cpu.Registers.HL);
+                cpu.Registers.PC = jumpOffset;
+            }
         }
     }
 }

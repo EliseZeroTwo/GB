@@ -11,6 +11,7 @@ namespace GB
         public Cpu Cpu = new Cpu();
         public IO.LCD Lcd;
         public IO.JOYP Joyp;
+        public IO.Timer Timer;
         private GBWindow Window;
         private uint nextTime = 0;
 
@@ -50,6 +51,8 @@ namespace GB
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
                 }
 
+                Timer.Tick();
+
                 Cpu.IFJoypad = Joyp.UpdateInput();
                 CurrentCycle++;
             }
@@ -67,6 +70,7 @@ namespace GB
             //Window = new GBWindow(ref Cpu.Memory);
             Lcd = new IO.LCD(this.Cpu.Memory);
             Joyp = new IO.JOYP(this.Cpu.Memory);
+            Timer = new IO.Timer(this.Cpu.Memory);
         }
     }
 }

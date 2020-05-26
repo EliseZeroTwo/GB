@@ -76,17 +76,17 @@ namespace GB
         public static void LDH(Cpu cpu, List<string> args)
         {
             ushort operandAddr = (ushort)(cpu.Registers.PC + 1);
-            ushort addr = (ushort)(0xFF00 + cpu.Memory[operandAddr]);
+            byte operand = cpu.Memory[operandAddr];
             switch (args[0])
             {
                 case "A":
                 {
-                    cpu.Memory.Read(out cpu.Registers.A, addr);
+                    cpu.Registers.A = cpu.Memory[(ushort)(0xFF00 + operand)];
                     break;
                 }
                 case "(a8)":
                 {
-                    cpu.Memory.Write(cpu.Registers.A, addr);
+                    cpu.Memory[(ushort)(0xFF00 + operand)] = cpu.Registers.A;
                     break;
                 }
             }

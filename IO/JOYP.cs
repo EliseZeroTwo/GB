@@ -15,7 +15,7 @@ namespace GB.IO
         private bool BPressed = false;
 
         private bool UseDpad = false;
-        private bool UseButtons = false;
+        private bool UseButtons = true;
 
         private Memory internalMemory;
 
@@ -77,8 +77,8 @@ namespace GB.IO
             
             if (!UseButtons)
                 b |= (1 << 5);
-            
-            res = internalMemory[0xFF00] == b;
+                
+            res = internalMemory[0xFF00] != b;
             internalMemory[0xFF00] = b;
             return res;
         }

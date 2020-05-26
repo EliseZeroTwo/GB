@@ -287,6 +287,7 @@ namespace GB.IO
         {
 
             LY++;
+            Console.WriteLine("Drawing Line");
             if (LY >= 144 && LY <= 153)
             {
                 internalMemory[0xFF0F] |= 1; // Set VBlank Interrupt
@@ -298,7 +299,7 @@ namespace GB.IO
             }
             else
             {
-                internalMemory[0xFF0F] ^= 1;
+                internalMemory[0xFF0F] &= 0b11110;
                 Mode = LCDModeFlag.HBlank;
                 if (M0Intr)
                 {

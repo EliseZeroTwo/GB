@@ -239,5 +239,12 @@ namespace GB
             cpu.HalfCarryFlag = false;
             cpu.ZeroFlag = cpu.ShouldSetZeroFlag(cpu.Registers.A);
         }
+
+        public static void CPL(Cpu cpu, List<string> args)
+        {
+            cpu.SubtractFlag = true;
+            cpu.HalfCarryFlag = true;
+            cpu.Registers.A = (byte)~cpu.Registers.A;
+        }
     }
 }
