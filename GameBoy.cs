@@ -29,7 +29,7 @@ namespace GB
             int hblankDelay = 456;
             uint vblankDelay = 70224;
             double vblankTarget = SDL.SDL_GetTicks() + vblankDelay * 1000 / Cpu.ClockSpeed;
-
+            Joyp.UpdateInput();
             while(true)
             {
                 if (cpuDelay-- == 0)
@@ -64,10 +64,9 @@ namespace GB
 
         public GameBoy()
         {
-            Window = new GBWindow(ref Cpu.Memory);
+            //Window = new GBWindow(ref Cpu.Memory);
             Lcd = new IO.LCD(this.Cpu.Memory);
             Joyp = new IO.JOYP(this.Cpu.Memory);
-
         }
     }
 }

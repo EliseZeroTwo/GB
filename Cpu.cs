@@ -9,16 +9,16 @@ namespace GB
     public enum Flags : byte
     {
         None = 0,
-        Carry = 0b10000,
-        HalfCarry = 0b100000,
-        Subtract = 0b1000000,
-        Zero = 0b10000000
+        Carry = (1 << 4),
+        HalfCarry = (1 << 5),
+        Subtract = (1 << 6),
+        Zero = (1 << 7),
     }
 
     [StructLayout(LayoutKind.Explicit)]
     public struct RegisterStruct
     {
-        [FieldOffset(0)] public Flags F;
+        [FieldOffset(0)] public byte F;
         [FieldOffset(1)] public byte A;
         [FieldOffset(2)] public byte C;
         [FieldOffset(3)] public byte B;
@@ -35,32 +35,7 @@ namespace GB
         [FieldOffset(8)] public ushort SP;
         [FieldOffset(10)] public ushort PC;
     }
-
-    public class Flag
-    {
-        Flags flag;
-        RegisterStruct regs;
-        public bool Value
-        {
-            get
-            {
-                return (regs.F & flag) != 0;
-            }
-            set
-            {
-                if (value == true)
-                    regs.F |= flag;
-                else
-                    regs.F &= (flag ^ (Flags)0xFF);
-            }
-        }
-        public Flag(Flags flag, ref RegisterStruct regs)
-        {
-            this.flag = flag;
-            this.regs = regs;
-        }
-    }
-
+    
     public class Cpu
     {
         public bool SingleStep = false;
@@ -71,10 +46,62 @@ namespace GB
 
         public List<ushort> Breakpoints = new List<ushort>();
 
-        public Flag CarryFlag;
-        public Flag HalfCarryFlag;
-        public Flag SubtractFlag;
-        public Flag ZeroFlag;
+        public bool CarryFlag
+        {
+            get
+            {
+                return (Registers.F & (byte)Flags.Carry) != 0;
+            }
+            set
+            {
+                if (value)
+                    Registers.F |= (byte)Flags.Carry;
+                else
+                    Registers.F &= (byte)Flags.Carry ^ 0xFF;
+            }
+        }
+        public bool HalfCarryFlag
+        {
+            get
+            {
+                return (Registers.F & (byte)Flags.HalfCarry) != 0;
+            }
+            set
+            {
+                if (value)
+                    Registers.F |= (byte)Flags.HalfCarry;
+                else
+                    Registers.F &= (byte)Flags.HalfCarry ^ 0xFF;
+            }
+        }
+        public bool SubtractFlag
+        {
+            get
+            {
+                return (Registers.F & (byte)Flags.Subtract) != 0;
+            }
+            set
+            {
+                if (value)
+                    Registers.F |= (byte)Flags.Subtract;
+                else
+                    Registers.F &= (byte)Flags.Subtract ^ 0xFF;
+            }
+        }
+        public bool ZeroFlag
+        {
+            get
+            {
+                return (Registers.F & (byte)Flags.Zero) != 0;
+            }
+            set
+            {
+                if (value)
+                    Registers.F |= (byte)Flags.Zero;
+                else
+                    Registers.F &= (byte)Flags.Zero ^ 0xFF;
+            }
+        }
 
         public bool IME = false;
         public bool IEVBlank
@@ -307,6 +334,7 @@ namespace GB
                             break;
                         }
                     }
+                    SDL2.SDL.SDL_Delay(100);
                 }
             }
             if (((IFVBlank && IEVBlank) || (IFLCDStat && IELCDStat) || (IFTimer && IETimer) || (IFSerial && IESerial) || (IFJoypad && IEJoypad)) && IME)
@@ -369,10 +397,10 @@ namespace GB
             Registers.SP = 0xFFFE;
             Registers.PC = 0x100;
             
-            CarryFlag = new Flag(Flags.Carry, ref Registers);
-            HalfCarryFlag = new Flag(Flags.HalfCarry, ref Registers);
-            SubtractFlag = new Flag(Flags.Subtract, ref Registers);
-            ZeroFlag = new Flag(Flags.Zero, ref Registers);
+            CarryFlag = true;
+            HalfCarryFlag = true;
+            SubtractFlag = false;
+            ZeroFlag = true;
         }       
     
         public T GetRegisterByName<T>(string registerName)

@@ -1,4 +1,5 @@
 using System;
+using SDL2;
 
 namespace GB.IO
 {
@@ -33,6 +34,10 @@ namespace GB.IO
     public class LCD
     {
         private Memory internalMemory;
+        private IntPtr targetWindow;
+        private IntPtr targetSurface;
+        private IntPtr renderer;
+        private IntPtr texture;
         public bool LYCLYCoincidenceIntr
         {
             get
@@ -184,11 +189,11 @@ namespace GB.IO
         {
             get
             {
-                return (Shade)(internalMemory[0xFF47] >> 0);
+                return (Shade)((internalMemory[0xFF47] >> 0) & 0b11);
             }
             set
             {
-                internalMemory[0xFF47] = (byte)((byte)value << 0);
+                internalMemory[0xFF47] = (byte)(((byte)value & 0b11) << 0);
             }
         }
 
@@ -196,11 +201,11 @@ namespace GB.IO
         {
             get
             {
-                return (Shade)(internalMemory[0xFF47] >> 2);
+                return (Shade)((internalMemory[0xFF47] >> 2) & 0b11);
             }
             set
             {
-                internalMemory[0xFF47] = (byte)((byte)value << 2);
+                internalMemory[0xFF47] = (byte)(((byte)value & 0b11) << 2);
             }
         }
 
@@ -208,11 +213,11 @@ namespace GB.IO
         {
             get
             {
-                return (Shade)(internalMemory[0xFF47] >> 4);
+                return (Shade)((internalMemory[0xFF47] >> 4) & 0b11);
             }
             set
             {
-                internalMemory[0xFF47] = (byte)((byte)value << 4);
+                internalMemory[0xFF47] = (byte)(((byte)value & 0b11) << 4);
             }
         }
 
@@ -220,13 +225,63 @@ namespace GB.IO
         {
             get
             {
-                return (Shade)(internalMemory[0xFF47] >> 6);
+                return (Shade)((internalMemory[0xFF47] >> 6) & 0b11);
             }
             set
             {
-                internalMemory[0xFF47] = (byte)((byte)value << 6);
+                internalMemory[0xFF47] = (byte)(((byte)value & 0b11) << 6);
             }
         }
+
+        private void Reload()
+        {
+            SDL.SDL_RenderPresent(renderer);
+        }
+        public void MapShade(Shade shade, out byte R, out byte G, out byte B)
+        {
+            switch (shade)
+            {
+                case Shade.Black:
+                    R = 0x2a;
+                    G = 0x45;
+                    B = 0x3b;
+                    break;
+                case Shade.DarkGray:
+                    R = 0x36;
+                    G = 0x5d;
+                    B = 0x48;
+                    break;
+                case Shade.LightGray:
+                    R = 0x57;
+                    G = 0x7C;
+                    B = 0x44;
+                    break;
+                default:
+                    R = 0;
+                    G = 0;
+                    B = 0;
+                    break;
+            }
+        }
+
+        public void SetPixel(byte r, byte g, byte b, byte x, byte y, bool reload=false)
+        {
+            SDL.SDL_SetRenderTarget(renderer, texture);
+            SDL.SDL_SetRenderDrawColor(renderer, r, g, b, 0);
+            SDL.SDL_Rect rect = new SDL.SDL_Rect();
+            rect.w = 1;
+            rect.h = 1;
+            rect.x = x;
+            rect.y = y;
+            SDL.SDL_RenderFillRect(renderer, ref rect);
+        }
+
+        public void SetPixel(Shade shade, byte x, byte y, bool reload=false)
+        {
+            MapShade(shade, out byte r, out byte g, out byte b);
+            SetPixel(r, g, b, x, y, reload);
+        }
+
 
         public void DrawLine()
         {
@@ -252,9 +307,32 @@ namespace GB.IO
             }
         }
 
+        public void ShowFrame()
+        {
+            SDL.SDL_SetRenderTarget(renderer, IntPtr.Zero);
+            SDL.SDL_RenderCopy(renderer, texture, IntPtr.Zero, IntPtr.Zero);
+            SDL.SDL_RenderPresent(renderer);
+            MapShade(Shade.Black, out byte r, out byte g, out byte b);
+            SDL.SDL_SetRenderDrawColor(renderer, r, g, b, 0x00);
+            SDL.SDL_RenderClear(renderer);
+        }
+
         public LCD(Memory memory)
         {
             internalMemory = memory;
+
+            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) != 0)
+                throw new Exception("Failed to init SDL");
+            
+            targetWindow = SDL.SDL_CreateWindow("GB", SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED, 160, 144, 0);
+            renderer = SDL.SDL_CreateRenderer(targetWindow, -1, 0);
+            texture = SDL.SDL_CreateTexture(renderer, SDL.SDL_PIXELFORMAT_RGBA8888, 2, 160, 144);
+
+            SDL.SDL_SetRenderTarget(renderer, texture);
+            MapShade(Shade.Black, out byte blackR, out byte blackG, out byte blackB);
+            SDL.SDL_SetRenderDrawColor(renderer, blackR, blackG, blackB, 0);
+            SDL.SDL_RenderClear(renderer);
+            ShowFrame();
         }
     }
 }

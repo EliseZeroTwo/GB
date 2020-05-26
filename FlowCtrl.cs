@@ -10,13 +10,13 @@ namespace GB
             switch(condition)
             {
                 case "Z":
-                    return cpu.ZeroFlag.Value;
+                    return cpu.ZeroFlag;
                 case "C":
-                    return cpu.CarryFlag.Value;
+                    return cpu.CarryFlag;
                 case "NZ":
-                    return !cpu.ZeroFlag.Value;
+                    return !cpu.ZeroFlag;
                 case "NC":
-                    return !cpu.CarryFlag.Value;
+                    return !cpu.CarryFlag;
                 default:
                     return true;
             }
@@ -49,7 +49,7 @@ namespace GB
 
             if (doJmp)
             {
-                cpu.StackPush(cpu.Registers.PC);
+                cpu.StackPush((ushort)(cpu.Registers.PC + 3));
                 cpu.Registers.PC = dstAddr;
             } 
             else

@@ -61,7 +61,7 @@ namespace GB
         }
         public GBWindow(ref Memory memory)
         {
-            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO|SDL.SDL_INIT_AUDIO) != 0)
+            if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO) < 0)
                 throw new Exception($"Failed to initialise SDL2");
 
             Window = SDL.SDL_CreateWindow("GB:tm:",
@@ -69,7 +69,7 @@ namespace GB
                 SDL.SDL_WINDOWPOS_CENTERED,
                 160,
                 144,
-                0
+                SDL.SDL_WindowFlags.SDL_WINDOW_SHOWN
             );
 
             if (Window == IntPtr.Zero)
