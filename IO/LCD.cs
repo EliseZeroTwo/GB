@@ -241,11 +241,6 @@ namespace GB.IO
         {
             switch (shade)
             {
-                case Shade.Black:
-                    R = 0x2a;
-                    G = 0x45;
-                    B = 0x3b;
-                    break;
                 case Shade.DarkGray:
                     R = 0x36;
                     G = 0x5d;
@@ -256,10 +251,11 @@ namespace GB.IO
                     G = 0x7C;
                     B = 0x44;
                     break;
+                case Shade.Black:
                 default:
-                    R = 0;
-                    G = 0;
-                    B = 0;
+                    R = 0x2a;
+                    G = 0x45;
+                    B = 0x3b;
                     break;
             }
         }
@@ -282,6 +278,22 @@ namespace GB.IO
             SetPixel(r, g, b, x, y, reload);
         }
 
+        public void DrawTile(byte tileNum)
+        {
+            ushort tileMemStart = 0x8000;
+            ushort tileStart = (ushort)(tileMemStart + (ushort)(tileNum * 0x10));
+            byte[] tileBuffer = new byte[16];
+            internalMemory.Read(tileBuffer, tileStart, 16);
+            Tile tile = new Tile(tileBuffer);
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    SetPixel(tile.GetPixel(x, y), (byte)x, (byte)y);
+                }
+            }
+            ShowFrame();
+        }
 
         public void DrawLine()
         {

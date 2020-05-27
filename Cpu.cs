@@ -340,8 +340,7 @@ namespace GB
             if (((IFVBlank && IEVBlank) || (IFLCDStat && IELCDStat) || (IFTimer && IETimer) || (IFSerial && IESerial) || (IFJoypad && IEJoypad)) && IME)
             {
                 IME = false;
-                Memory.Write(Registers.PC, Registers.SP);
-                Registers.SP -= 2;
+                this.StackPush(Registers.PC);
                 
                 ushort target = 0;
 

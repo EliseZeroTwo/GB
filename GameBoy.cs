@@ -31,6 +31,7 @@ namespace GB
             uint vblankDelay = 70224;
             double vblankTarget = SDL.SDL_GetTicks() + vblankDelay * 1000 / Cpu.ClockSpeed;
             Joyp.UpdateInput();
+            
             while(true)
             {
                 if (cpuDelay-- == 0)
@@ -46,6 +47,7 @@ namespace GB
                 if (vblankDelay-- == 0)
                 {
                     vblankDelay = 70224;
+                    Lcd.DrawTile(0);
                     if (vblankTarget > SDL.SDL_GetTicks())
                         SDL.SDL_Delay((uint) vblankTarget - SDL.SDL_GetTicks());
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
