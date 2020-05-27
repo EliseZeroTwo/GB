@@ -20,7 +20,7 @@ namespace GB
         public Opcode(string mneu, ushort length, ushort effectiveLength, int cycles, OpcodeHandler handler, List<string> args)
         {
             Length = length;
-            EffectiveLength = length;
+            EffectiveLength = effectiveLength;
             Mneumonic = mneu;
             Handler = handler;
             Args = args;
