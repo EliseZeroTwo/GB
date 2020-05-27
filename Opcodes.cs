@@ -194,6 +194,7 @@ namespace GB
             { 0xC8, new Opcode("RET Z", 1, 0, 8, new OpcodeHandler(FlowCtrl.RET), new List<string>{"Z"}) },
             { 0xC9, new Opcode("RET", 1, 0, 16, new OpcodeHandler(FlowCtrl.RET), new List<string>{}) },
             { 0xCA, new Opcode("JP Z,a16", 3, 0, 16, new OpcodeHandler(FlowCtrl.JMP), new List<string>{"Z", "a16"}) },
+            { 0xCB, new Opcode("PREFIX", 3, 4, new OpcodeHandler(PrefixedOps.PrefixedOp), new List<string>{}) },
             { 0xCC, new Opcode("CALL Z,a16", 3, 0, 12, new OpcodeHandler(FlowCtrl.CALL), new List<string>{"Z", "a16"}) },
             { 0xCD, new Opcode("CALL a16", 3, 0, 24, new OpcodeHandler(FlowCtrl.CALL), new List<string>{"a16"}) },
             { 0xCE, new Opcode("ADC A,d8", 2, 8, new OpcodeHandler(ARTHLOG8.ADC), new List<string>{"A", "d8"}) },

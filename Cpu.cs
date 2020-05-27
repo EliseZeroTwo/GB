@@ -42,6 +42,7 @@ namespace GB
         public const uint ClockSpeed = 4194304;
         public const uint ClocksPerFrame = 70224;
         public Memory Memory = new Memory();
+        public Opcode CurrentInst;
         public RegisterStruct Registers = new RegisterStruct();
 
         public List<ushort> Breakpoints = new List<ushort>();
@@ -369,12 +370,12 @@ namespace GB
                 ushort operandAddr = (ushort)(Registers.PC + 1);
                 Memory.Read(out ushort maybeUshortArgLog, operandAddr);
 
-                if (Opcodes.List.TryGetValue(opcodeRaw, out Opcode opcode))
+                if (Opcodes.List.TryGetValue(opcodeRaw, out CurrentInst))
                 {
-                    Console.WriteLine($"0x{Registers.PC:x}: {opcode.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>").Replace("d8", $"d8<0x{Memory[operandAddr]:x}>").Replace("d16", $"d16<0x{maybeUshortArgLog:x}>"));
-                    opcode.Execute(this);
-                    Registers.PC += opcode.EffectiveLength;
-                    return opcode.Cycles;
+                    Console.WriteLine($"0x{Registers.PC:x}: {CurrentInst.Mneumonic}".Replace("a8", $"a8<0x{Memory[operandAddr]:x}>").Replace("a16", $"a16<0x{maybeUshortArgLog:x}>").Replace("d8", $"d8<0x{Memory[operandAddr]:x}>").Replace("d16", $"d16<0x{maybeUshortArgLog:x}>"));
+                    CurrentInst.Execute(this);
+                    Registers.PC += CurrentInst.EffectiveLength;
+                    return CurrentInst.Cycles;
                 }
                 else
                 {
