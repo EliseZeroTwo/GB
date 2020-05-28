@@ -10,6 +10,10 @@ namespace GB
         {
             { 0x00, new PrefixedOpcodeHandler(RxC) },
             { 0x30, new PrefixedOpcodeHandler(SWAP) },
+            { 0x40, new PrefixedOpcodeHandler(BIT) },
+            { 0x50, new PrefixedOpcodeHandler(BIT) },
+            { 0x60, new PrefixedOpcodeHandler(BIT) },
+            { 0x70, new PrefixedOpcodeHandler(BIT) },
         };
         
         public static bool DerefHL(byte opcode)
@@ -125,6 +129,18 @@ namespace GB
             cpu.ZeroFlag = cpu.ShouldSetZeroFlag(value);
 
             return length;
+        }
+
+        public static byte BIT(Cpu cpu, byte opcode)
+        {
+            bool left = (opcode & 0xF) < 7;
+            byte bit = (byte)((((opcode & 0xF0) >> 8) - 4) + (left ? 0 : 1));
+            cpu.HalfCarryFlag = true;
+            cpu.SubtractFlag = false;
+            
+            byte value = GetOperand(cpu, opcode);
+            cpu.ZeroFlag = (value & (1 << bit)) == 0;
+            return (byte)(DerefHL(opcode) ? 16 : 8); 
         }
         public static void PrefixedOp(Cpu cpu, List<string> args)
         {

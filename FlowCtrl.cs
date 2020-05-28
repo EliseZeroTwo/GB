@@ -68,7 +68,7 @@ namespace GB
                 if (jumpDistanceByte > 127) // Two's Compliment
                 {
                     jumpDistanceByte ^= 0xFF;
-                    jumpDistanceByte--;
+                    jumpDistanceByte++;
                     neg = true;
                 }
 
@@ -79,8 +79,6 @@ namespace GB
                     else
                         cpu.Registers.PC -= jumpDistanceByte;
                 }
-                else
-                    cpu.Registers.PC += 2;
             }
             else if((args[0] == "a16" || (args.Count == 2 && args[1] == "a16")))
             {
@@ -95,6 +93,17 @@ namespace GB
                 cpu.Memory.Read(out ushort jumpOffset, cpu.Registers.HL);
                 cpu.Registers.PC = jumpOffset;
             }
+        }
+        
+        public static ushort DetermineRstVecFromOpcode(Cpu cpu)
+        {
+            byte opcode = cpu.Memory[cpu.Registers.PC];
+            return (byte)(((opcode & 0xF) == 0xF ? 8 : 0) + ((opcode & 0xF0) - 0xC0));
+        }
+        public static void RST(Cpu cpu, List<string> args)
+        {
+            cpu.StackPush((ushort)(cpu.Registers.PC + cpu.CurrentInst.Length));
+            cpu.Registers.PC = DetermineRstVecFromOpcode(cpu);
         }
     }
 }

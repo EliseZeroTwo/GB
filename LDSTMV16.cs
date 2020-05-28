@@ -47,5 +47,16 @@ namespace GB
                 }
             }
         }
+
+        public static void PUSH(Cpu cpu, List<string> args)
+        {
+            cpu.StackPush(cpu.GetRegisterByName<ushort>(args[0]));
+        }
+
+        public static void POP(Cpu cpu, List<string> args)
+        {
+            cpu.StackPop(out ushort value);
+            cpu.SetRegisterByName(args[0], value);
+        }
     }
 }

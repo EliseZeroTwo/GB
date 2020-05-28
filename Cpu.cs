@@ -44,8 +44,10 @@ namespace GB
         public Memory Memory = new Memory();
         public Opcode CurrentInst;
         public RegisterStruct Registers = new RegisterStruct();
-
+        private RegisterStruct oldReg = new RegisterStruct();
+        private List<ushort> IgnoreChangeAddrs = new List<ushort>();
         public List<ushort> Breakpoints = new List<ushort>();
+        private bool HLBreak = false;
 
         public bool CarryFlag
         {
@@ -251,10 +253,14 @@ namespace GB
 
         public int ExecuteInstruction()
         {
-            if (SingleStep || Breakpoints.Contains(Registers.PC))
+            if (SingleStep || Breakpoints.Contains(Registers.PC) || (HLBreak && Registers.HL != oldReg.HL && !IgnoreChangeAddrs.Contains(Registers.PC)))
             {
                 if (Breakpoints.Contains(Registers.PC))
                     Console.WriteLine($"Hit breakpoint at 0x{Registers.PC:x}");
+                
+                if (Registers.HL != oldReg.HL)
+                    Console.WriteLine($"Written ${Registers.HL:X} to HL (was {oldReg.HL:X})");
+
                 SingleStep = true;
                 bool waiting = true;
                 while(waiting)
@@ -307,6 +313,8 @@ namespace GB
                         {
                             SingleStep = false;
                             waiting = false;
+                            if (!IgnoreChangeAddrs.Contains(Registers.PC))
+                                IgnoreChangeAddrs.Add(Registers.PC);
                             break;
                         }
                         case 'd':
@@ -366,6 +374,7 @@ namespace GB
             }
             else
             {
+                oldReg = Registers;
                 byte opcodeRaw = Memory[Registers.PC];
                 ushort operandAddr = (ushort)(Registers.PC + 1);
                 Memory.Read(out ushort maybeUshortArgLog, operandAddr);
@@ -390,7 +399,7 @@ namespace GB
            // CpuThread = new Thread(new ThreadStart(MainLoop));
 
             Registers.AF = 0x1B0;
-            Registers.BC = 0x13;
+            Registers.BC = 0x0D;
             Registers.DE = 0xD8;
             Registers.HL = 0x14D;
 
@@ -422,29 +431,30 @@ namespace GB
             Registers = (RegisterStruct)boxed;
         }
 
-        public void StackPop(out ushort outVal)
-        {
-            Registers.SP += 2;
-            Memory.Read(out outVal, Registers.SP);
-        }
-
         public void StackPop(out byte outVal)
         {
             Registers.SP += 1;
             outVal = Memory[Registers.SP];
         }
-
-        public void StackPush(ushort val)
-        {
-            Memory.Write(val, Registers.SP);
-            Registers.SP -= 2;
-        }
         
+        public void StackPop(out ushort outVal)
+        {
+            Registers.SP += 1;
+            Memory.Read(out outVal, Registers.SP);
+            Registers.SP += 1;
+        }
+
         public void StackPush(byte val)
         {
             Memory[Registers.SP] = val;
             Registers.SP -= 1;
         }
         
+        public void StackPush(ushort val)
+        {
+            Registers.SP -= 1;
+            Memory.Write(val, Registers.SP);
+            Registers.SP -= 1;
+        }
     }
 }

@@ -12,6 +12,7 @@ namespace GB
         public IO.LCD Lcd;
         public IO.JOYP Joyp;
         public IO.Timer Timer;
+        public IO.SDT SDT;
         private GBWindow Window;
         private uint nextTime = 0;
 
@@ -29,6 +30,7 @@ namespace GB
             int cpuDelay = 0;
             int hblankDelay = 456;
             uint vblankDelay = 70224;
+            uint sdtDelay = 511;
             double vblankTarget = SDL.SDL_GetTicks() + vblankDelay * 1000 / Cpu.ClockSpeed;
             Joyp.UpdateInput();
             
@@ -53,6 +55,12 @@ namespace GB
                     vblankTarget += vblankDelay * 1000 / Cpu.ClockSpeed;
                 }
 
+                if (sdtDelay-- == 0)
+                {
+                    sdtDelay = 511;
+                    SDT.Tick();
+                }
+
                 Timer.Tick();
 
                 Cpu.IFJoypad = Joyp.UpdateInput();
@@ -73,6 +81,7 @@ namespace GB
             Lcd = new IO.LCD(this.Cpu.Memory);
             Joyp = new IO.JOYP(this.Cpu.Memory);
             Timer = new IO.Timer(this.Cpu.Memory);
+            SDT = new IO.SDT(this.Cpu.Memory);
         }
     }
 }

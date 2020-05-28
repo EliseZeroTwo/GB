@@ -3,6 +3,8 @@ using System.Collections.Generic;
 namespace GB
 {
     public delegate void OpcodeHandler(Cpu cpu, List<string> args);
+
+
     public class Opcode
     {
         public readonly string Mneumonic;
